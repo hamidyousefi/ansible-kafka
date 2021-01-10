@@ -1,0 +1,70 @@
+---
+- name: install necessary packages
+  apt:
+    name:
+      - default-jre
+      - default-jdk
+      - unzip
+    state: present
+    update_cache: yes
+    force_apt_get: yes
+
+- name: create necessary group
+  group:
+    name: kafka
+    system: yes
+    state: present
+
+- name: create necessary user
+  user:
+    name: kafka
+    system: yes
+    create_home: no
+    shell: /usr/bin/false
+    group: kafka
+    state: present
+
+- name: download kafka package
+  get_url:
+    url: https://downloads.apache.org/kafka/2.6.0/kafka_2.13-2.6.0.tgz
+    dest: /opt/kafka.tgz
+
+- name: extract and place the downlaoded package in correct path
+  shell:
+    cmd: 'tar -xf kafka.tgz && rm -rf kafka && mv kafka_2.13-2.6.0 kafka && rm kafka.tgz'
+    warn: false
+  args:
+    chdir: '/opt'
+
+- name: change the owner of kafka directory
+  file:
+    path: /opt/kafka
+    recurse: yes
+    owner: kafka
+    group: kafka
+    mode: '0755'
+
+- name: add systemd services for zookeeper and kafka
+  template:
+    src: "{{ item }}.j2"
+    dest: "/lib/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  with_items:
+    - zookeeper.service
+    - kafka.service
+
+- name: enable systemd services of zookeeper
+  systemd:
+    name: zookeeper
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+
+- name: enable systemd services of kafka
+  systemd:
+    name: kafka
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
