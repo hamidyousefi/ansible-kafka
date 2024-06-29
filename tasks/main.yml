@@ -1,51 +1,56 @@
 ---
-- name: install necessary packages
-  apt:
+- name: Install necessary packages
+  ansible.builtin.apt:
     name:
       - default-jre
       - default-jdk
       - unzip
     state: present
-    update_cache: yes
-    force_apt_get: yes
+    update_cache: true
+    force_apt_get: true
 
-- name: create necessary group
-  group:
+- name: Create necessary group
+  ansible.builtin.group:
     name: kafka
-    system: yes
+    system: true
     state: present
 
-- name: create necessary user
-  user:
+- name: Create necessary user
+  ansible.builtin.user:
     name: kafka
-    system: yes
-    create_home: no
+    system: true
+    create_home: false
     shell: /usr/bin/false
     group: kafka
     state: present
 
-- name: download kafka package
-  get_url:
-    url: https://downloads.apache.org/kafka/2.6.0/kafka_2.13-2.6.0.tgz
+- name: Download kafka package
+  ansible.builtin.get_url:
+    url: https://downloads.apache.org/kafka/3.7.0/kafka_2.13-3.7.0.tgz
     dest: /opt/kafka.tgz
+    owner: root
+    group: root
+    mode: '0644'
 
-- name: extract and place the downlaoded package in correct path
-  shell:
+- name: Extract and place the downlaoded package in correct path # noqa: command-instead-of-module
+  ansible.builtin.shell:
     cmd: 'tar -xf kafka.tgz && rm -rf kafka && mv kafka_2.13-2.6.0 kafka && rm kafka.tgz'
     warn: false
+  register: extration_output
   args:
     chdir: '/opt'
+  changed_when: extration_output.rc != 0
 
-- name: change the owner of kafka directory
-  file:
+- name: Change the owner of kafka directory
+  ansible.builtin.file:
     path: /opt/kafka
-    recurse: yes
+    recurse: true
     owner: kafka
     group: kafka
     mode: '0755'
 
-- name: add systemd services for zookeeper and kafka
-  template:
+- name: Add systemd services for zookeeper and kafka
+  ansible.builtin.template:
     src: "{{ item }}.j2"
     dest: "/lib/systemd/system/{{ item }}"
     owner: root
@@ -54,17 +59,6 @@
   with_items:
     - zookeeper.service
     - kafka.service
-
-- name: enable systemd services of zookeeper
-  systemd:
-    name: zookeeper
-    state: restarted
-    daemon_reload: yes
-    enabled: yes
-
-- name: enable systemd services of kafka
-  systemd:
-    name: kafka
-    state: restarted
-    daemon_reload: yes
-    enabled: yes
+  notify:
+    - Enable Zookeeper Service
+    - Enable Kafka Service

@@ -1,0 +1,22 @@
+---
+galaxy_info:
+  role_name: kafka
+  namespace: hamidyousefi
+  author: Hamid Yousefi
+  description: Kafka Service Installation
+  license: GPL-2.0-or-later
+  min_ansible_version: '2.8'
+  platforms:
+    - name: Debian
+      versions:
+        - buster
+    - name: Ubuntu
+      versions:
+        - xenial
+        - bionic
+        - focal
+        - jammy
+        - noble
+  galaxy_tags:
+    - linux
+    - kafka
